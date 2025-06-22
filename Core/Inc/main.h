@@ -63,6 +63,24 @@ void Error_Handler(void);
 #define ID1_GPIO_Port GPIOC
 #define ID0_Pin GPIO_PIN_15
 #define ID0_GPIO_Port GPIOC
+#define FAULT3_Pin GPIO_PIN_1
+#define FAULT3_GPIO_Port GPIOC
+#define SD3_Pin GPIO_PIN_3
+#define SD3_GPIO_Port GPIOC
+#define SD_0_Pin GPIO_PIN_2
+#define SD_0_GPIO_Port GPIOA
+#define FAULT0_Pin GPIO_PIN_3
+#define FAULT0_GPIO_Port GPIOA
+#define SD_1_Pin GPIO_PIN_5
+#define SD_1_GPIO_Port GPIOA
+#define FAULT1_Pin GPIO_PIN_4
+#define FAULT1_GPIO_Port GPIOC
+#define SD_2_Pin GPIO_PIN_5
+#define SD_2_GPIO_Port GPIOC
+#define FAULT2_Pin GPIO_PIN_2
+#define FAULT2_GPIO_Port GPIOB
+#define ID0B9_Pin GPIO_PIN_9
+#define ID0B9_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
 
