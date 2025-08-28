@@ -20,6 +20,7 @@
 #include "main.h"
 #include "cmsis_os.h"
 #include "adc.h"
+#include "dma.h"
 #include "fdcan.h"
 #include "i2c.h"
 #include "lptim.h"
@@ -94,6 +95,7 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_DMA_Init();
   MX_ADC2_Init();
   MX_ADC3_Init();
   MX_ADC4_Init();
