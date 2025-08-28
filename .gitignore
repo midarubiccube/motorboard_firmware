@@ -2,6 +2,7 @@
 /.settings/
 .mxproject
 *.launch
+.vscode/
 /build/
 /Drivers/
 /Middlewares/
