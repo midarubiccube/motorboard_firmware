@@ -4,6 +4,7 @@
 *.launch
 /build/
 /Drivers/
+/Middlewares/
 
 # CMake
 CMakeLists.txt.user
