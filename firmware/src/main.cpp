@@ -6,9 +6,9 @@
 
 CANFD* canfd;
 
-extern "C" void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs) {
+void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs) {
   if((RxFifo0ITs & FDCAN_IT_RX_FIFO0_NEW_MESSAGE) != RESET) {
-	  canfd->rx_interrupt_task();
+    canfd->rx_interrupt_task();
   }
 }
 
@@ -24,7 +24,7 @@ extern "C" void StartDefaultTask(void *argument)
 	CANFD_Frame test;
 	test.id=10;
 	test.size = 32;
-	memset(test.data, 0, 64);
+	for (int i = 0; i < 32; i++) test.data[i] = i;
 	canfd->tx(test);
 
   while (1)

@@ -16,10 +16,10 @@ void CANFD::init(){
 bool CANFD::tx(CANFD_Frame &tx_data){
 	FDCAN_TxHeaderTypeDef	TxHeader;
 	TxHeader.Identifier = tx_data.id;
-	TxHeader.IdType = FDCAN_STANDARD_ID;
+	TxHeader.IdType = FDCAN_EXTENDED_ID;
 	TxHeader.TxFrameType = FDCAN_DATA_FRAME;
 	TxHeader.DataLength = FDCAN_DLC_BYTES_32;
-	TxHeader.ErrorStateIndicator = FDCAN_ESI_ACTIVE;
+	TxHeader.ErrorStateIndicator = FDCAN_ESI_PASSIVE;
 	TxHeader.BitRateSwitch = FDCAN_BRS_ON;
 	TxHeader.FDFormat = FDCAN_FD_CAN;
 	TxHeader.TxEventFifoControl = FDCAN_NO_TX_EVENTS;
