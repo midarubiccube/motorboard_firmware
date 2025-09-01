@@ -16,7 +16,7 @@ float PID::calc(float target,float feedback){
 	old_error = error;
 
 	float out = p+i+d;
-
+	printf("out: %d\n", (int)error);
 
 
 	if(limit_enable){
