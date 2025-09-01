@@ -18,6 +18,8 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+
+#include "stdio.h"
 #include "cmsis_os.h"
 #include "adc.h"
 #include "dma.h"
@@ -45,7 +47,11 @@
 
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
-
+int _write(int file, char *ptr, int len)
+{
+  HAL_UART_Transmit(&huart5, (uint8_t *)ptr,len,10);
+  return len;
+}
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
@@ -111,7 +117,7 @@ int main(void)
   MX_TIM15_Init();
   MX_I2C3_Init();
   /* USER CODE BEGIN 2 */
-
+  setbuf(stdout, NULL);
   /* USER CODE END 2 */
 
   /* Init scheduler */
