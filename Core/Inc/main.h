@@ -54,7 +54,7 @@ extern "C" {
 
 /* Exported macro ------------------------------------------------------------*/
 /* USER CODE BEGIN EM */
-
+extern int can_id;
 /* USER CODE END EM */
 
 /* Exported functions prototypes ---------------------------------------------*/
@@ -87,8 +87,8 @@ void Error_Handler(void);
 #define SD_2_GPIO_Port GPIOC
 #define FAULT2_Pin GPIO_PIN_2
 #define FAULT2_GPIO_Port GPIOB
-#define ID0B9_Pin GPIO_PIN_9
-#define ID0B9_GPIO_Port GPIOB
+#define ID3_Pin GPIO_PIN_9
+#define ID3_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
 

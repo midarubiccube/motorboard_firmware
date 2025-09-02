@@ -83,11 +83,12 @@ extern "C" void StartDefaultTask(void *argument)
   //led.set_rgb(255, 255, 255);
   //led.start();
   
-  canfd = new CANFD(&hfdcan1);
+  	canfd = new CANFD(&hfdcan1);
 	canfd->init();
+	//canfd->set_filter_mask(can_id, 0x1FFFFFFF)
 
 	CANFD_Frame test;
-	test.id=10;
+	test.id=can_id;
 	test.size = 32;
 	for (int i = 0; i < 32; i++) test.data[i] = i;
 	canfd->tx(test);
