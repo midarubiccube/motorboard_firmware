@@ -84,7 +84,7 @@ extern "C" void StartDefaultTask(void *argument)
   //led.start();
   
   	canfd = new CANFD(&hfdcan1);
-	canfd->init();
+	canfd->start();
 	//canfd->set_filter_mask(can_id, 0x1FFFFFFF)
 
 	CANFD_Frame test;
@@ -125,15 +125,15 @@ extern "C" void StartDefaultTask(void *argument)
 
 	HAL_GPIO_WritePin(SD_0_GPIO_Port, SD_0_Pin, GPIO_PIN_SET);
 
-	PID pid1{true, 0.1};
+	PID pid1{true, 0.01};
 	pid1.set_limit(10, 100);
-	pid1.set_gain(0.1,0.001, 0.2);;
+	pid1.set_gain(1,0.001, 0.2);;
 	__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, 10);
  	 while (1)
   	{
 		int32_t encoder = get_encoder2();
 		int pwm = (int)pid1.calc(200.0, (float)encoder);
 		__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, pwm);
-		osDelay(10);
+		osDelayUntil(10);
   	}
 }
