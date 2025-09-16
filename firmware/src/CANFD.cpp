@@ -4,7 +4,7 @@
 #include "fdcan.h"
 
 void CANFD::start(){
-	if (HAL_FDCAN_ConfigFilter(fdcan_, &filter_) != HAL_OK)
+	/*if (HAL_FDCAN_ConfigFilter(fdcan_, &filter_) != HAL_OK)
 	{
 		Error_Handler();
 	}
@@ -12,7 +12,7 @@ void CANFD::start(){
 	if (HAL_FDCAN_ConfigGlobalFilter(fdcan_, FDCAN_REJECT, FDCAN_REJECT, FDCAN_ACCEPT_IN_RX_FIFO0, FDCAN_ACCEPT_IN_RX_FIFO0) != HAL_OK)
 	{
 		Error_Handler();
-	}
+	}*/
 
 	if(HAL_FDCAN_Start(fdcan_)!= HAL_OK) {
 		Error_Handler();

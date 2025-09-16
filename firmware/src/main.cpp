@@ -124,6 +124,9 @@ extern "C" void StartDefaultTask(void *argument)
 	HAL_TIM_Encoder_Start(&htim8, TIM_CHANNEL_ALL);
 
 	HAL_GPIO_WritePin(SD_0_GPIO_Port, SD_0_Pin, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(SD_1_GPIO_Port, SD_1_Pin, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(SD_2_GPIO_Port, SD_2_Pin, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(SD_3_GPIO_Port, SD_3_Pin, GPIO_PIN_SET);
 
 	PID pid1{true, 0.01};
 	pid1.set_limit(10, 100);
@@ -131,9 +134,26 @@ extern "C" void StartDefaultTask(void *argument)
 	__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, 10);
  	 while (1)
   	{
-		int32_t encoder = get_encoder2();
-		int pwm = (int)pid1.calc(200.0, (float)encoder);
-		__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, pwm);
-		osDelayUntil(10);
+		//int32_t encoder = get_encoder2();
+		//int pwm = (int)pid1.calc(200.0, (float)encoder);
+		__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, 200);
+		__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_3, 200);
+		__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, 200);
+		__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_3, 200);
+		osDelay(1000);
+		__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, 0);
+		__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_3, 0);
+		__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, 0);
+		__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_3, 0);
+
+		__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, 200);
+		__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_4, 200);
+		__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, 200);
+		__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_4, 200);
+		osDelay(1000);
+		__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, 0);
+		__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_4, 0);
+		__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, 0);
+		__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_4, 0);
   	}
 }

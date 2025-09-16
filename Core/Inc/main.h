@@ -73,8 +73,8 @@ void Error_Handler(void);
 #define ID0_GPIO_Port GPIOC
 #define FAULT3_Pin GPIO_PIN_1
 #define FAULT3_GPIO_Port GPIOC
-#define SD3_Pin GPIO_PIN_3
-#define SD3_GPIO_Port GPIOC
+#define SD_3_Pin GPIO_PIN_3
+#define SD_3_GPIO_Port GPIOC
 #define SD_0_Pin GPIO_PIN_2
 #define SD_0_GPIO_Port GPIOA
 #define FAULT0_Pin GPIO_PIN_3
