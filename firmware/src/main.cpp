@@ -2,86 +2,25 @@
 #include <cstring>
 #include <cstdio>
 #include <cstdlib>
+#include <array>
 
 #include "CANFD.hpp"
 #include "FullColorLED.hpp"
+#include "Encoder.hpp"
 #include "Motor.hpp"
 #include "message.hpp" 
 
-
-/*PID pid1;
-PID pid2;
-PID pid3;
-PID pid4;*/
-
 extern osTimerId_t controlTimerHandle;
-
-
-int32_t get_encoder1( void )
-{
-	  uint16_t enc_buff = LPTIM1->CNT;
-	  printf("%d\n", LPTIM1->CNT);
-	  LPTIM1->CNT = 0;
-	  if (enc_buff > 32767)
-	  {
-	    return (int16_t)enc_buff * -1;
-	  }
-	  else
-	  {
-	    return (int16_t)enc_buff;
-	  }
-}
-
-int32_t get_encoder2( void )
-{
-	  uint16_t enc_buff = TIM8->CNT;
-	  TIM8->CNT = 0;
-	  if (enc_buff > 32767)
-	  {
-	    return (int16_t)enc_buff * -1;
-	  }
-	  else
-	  {
-	    return (int16_t)enc_buff;
-	  }
-}
-
-int32_t get_encoder3( void )
-{
-	  uint16_t enc_buff = TIM1->CNT;
-	  TIM1->CNT = 0;
-	  if (enc_buff > 32767)
-	  {
-	    return (int16_t)enc_buff * -1;
-	  }
-	  else
-	  {
-	    return (int16_t)enc_buff;
-	  }
-}
-
-int32_t get_encoder4( void )
-{
-	  uint16_t enc_buff = TIM4->CNT;
-	  TIM4->CNT = 0;
-	  if (enc_buff > 32767)
-	  {
-	    return (int16_t)enc_buff * -1;
-	  }
-	  else
-	  {
-	    return (int16_t)enc_buff;
-	  }
-}
-
 CANFD* canfd;
 Motor* motor1;
+std::array<Motor*, 4> motors;
 
 void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs) {
   if((RxFifo0ITs & FDCAN_IT_RX_FIFO0_NEW_MESSAGE) != RESET) {
     canfd->rx_interrupt_task();
   }
 }
+
 
 extern "C" void StartDefaultTask(void *argument)
 {
@@ -98,26 +37,16 @@ extern "C" void StartDefaultTask(void *argument)
 	test.size = 32;
 	for (int i = 0; i < 32; i++) test.data[i] = i;
 	//canfd->tx(test);
-
-  	/*pid1.set_limit(10, 900);
-	pid1.set_gain(5,3,0.2);
-	//pid1.set_gain(0.3,2,0.2);
-	pid2.set_limit(10, 900);
-	//pid2.set_gain(5,3,0.2);i
-	pid2.set_gain(0.3,2,0.2);
-
-	pid3.set_limit(10, 900);
-	 //pid1.set_gain(5,3,0.2);
-	pid3.set_gain(0.3,2,0.2);
-	pid4.set_limit(10, 900);
-	//pid2.set_gain(5,3,0.2);
-	pid4.set_gain(0.3,2,0.2);*/
-	motor1 = new Motor(&htim2, TIM_CHANNEL_3, TIM_CHANNEL_4, SD_3_GPIO_Port, SD_3_Pin, get_encoder4);
-	motor1->init();
-	motor1->setMode(1); // ENCODER mode	
-	motor1->setPIDLimit(0, 50);
-	motor1->setPIDGain(0.05,0.001, 0.0001);
-	motor1->start();
+	motors[0] = new Motor(&htim3, TIM_CHANNEL_1, TIM_CHANNEL_2, SD_0_GPIO_Port, SD_0_Pin, get_encoder1);
+	motors[1] = new Motor(&htim3, TIM_CHANNEL_3, TIM_CHANNEL_4, SD_1_GPIO_Port, SD_1_Pin, get_encoder2);
+	motors[2] = new Motor(&htim2, TIM_CHANNEL_1, TIM_CHANNEL_2, SD_2_GPIO_Port, SD_2_Pin, get_encoder3);
+	motors[3] = new Motor(&htim2, TIM_CHANNEL_3, TIM_CHANNEL_4, SD_3_GPIO_Port, SD_3_Pin, get_encoder4);
+	
+	motors[3]->init();
+	motors[3]->setMode(1); // ENCODER mode	
+	motors[3]->setPIDLimit(0, 50);
+	motors[3]->setPIDGain(0.05,0.001, 0.0001);
+	motors[3]->start();
 
 
 	__HAL_LPTIM_START_CONTINUOUS(&hlptim1);
