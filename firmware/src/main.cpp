@@ -5,7 +5,7 @@
 
 #include "CANFD.hpp"
 #include "FullColorLED.hpp"
-#include <PID.hpp>
+#include "Motor.hpp"
 #include "message.hpp" 
 
 
@@ -75,15 +75,13 @@ int32_t get_encoder4( void )
 }
 
 CANFD* canfd;
+Motor* motor1;
 
 void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs) {
   if((RxFifo0ITs & FDCAN_IT_RX_FIFO0_NEW_MESSAGE) != RESET) {
     canfd->rx_interrupt_task();
   }
 }
-
-PID pid1{true, 0.01};
-
 
 extern "C" void StartDefaultTask(void *argument)
 {
@@ -114,30 +112,20 @@ extern "C" void StartDefaultTask(void *argument)
 	pid4.set_limit(10, 900);
 	//pid2.set_gain(5,3,0.2);
 	pid4.set_gain(0.3,2,0.2);*/
+	motor1 = new Motor(&htim2, TIM_CHANNEL_3, TIM_CHANNEL_4, SD_3_GPIO_Port, SD_3_Pin, get_encoder4);
+	motor1->init();
+	motor1->setMode(1); // ENCODER mode	
+	motor1->setPIDLimit(0, 50);
+	motor1->setPIDGain(0.05,0.001, 0.0001);
+	motor1->start();
 
-  	HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
-	HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_2);
-	HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_3);
-	HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_4);
-	HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
-	HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2);
-	HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_3);
-	HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_4);
 
 	__HAL_LPTIM_START_CONTINUOUS(&hlptim1);
 	HAL_LPTIM_Encoder_Start(&hlptim1, 100000);
-	
 	HAL_TIM_Encoder_Start(&htim1, TIM_CHANNEL_ALL);
 	HAL_TIM_Encoder_Start(&htim4, TIM_CHANNEL_ALL);
 	HAL_TIM_Encoder_Start(&htim8, TIM_CHANNEL_ALL);
 
-	HAL_GPIO_WritePin(SD_0_GPIO_Port, SD_0_Pin, GPIO_PIN_SET);
-	HAL_GPIO_WritePin(SD_1_GPIO_Port, SD_1_Pin, GPIO_PIN_SET);
-	HAL_GPIO_WritePin(SD_2_GPIO_Port, SD_2_Pin, GPIO_PIN_SET);
-	HAL_GPIO_WritePin(SD_3_GPIO_Port, SD_3_Pin, GPIO_PIN_SET);
-
-	pid1.set_limit(0, 50);
-	pid1.set_gain(0.05,0.001, 0.0001);
 	osTimerStart(controlTimerHandle, 10);
 
 	for(;;)
@@ -150,22 +138,14 @@ int target = 0;
 
 extern "C" void controlCallback(void *argument)
 {
-	int32_t encoder = get_encoder4();
-	int32_t control = pid1.calc(abs(target/2), encoder);
-	if (target < 0){
-		__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_3, control);
-		__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_4, 0);
-	} else {
-		__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_4, control);
-		__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_3, 0);
-	}
-
+  	motor1->control();
 	if (canfd->rx_available())
     {
       	CANFD_Frame data;
       	canfd->rx(data);
       	Message_format msg = {0};
       	memcpy(&msg.data, data.data, 32);
-		target = msg.data.motor_rsv.target;		
+		target = msg.data.motor_rsv.target;
+		motor1->setTarget(target);
     }
 }

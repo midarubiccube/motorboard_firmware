@@ -1,0 +1,72 @@
+#include "Motor.hpp"
+
+#include <cstdlib>
+
+#include <string.h>
+
+#include "main.h"
+
+
+void Motor::init(){
+    HAL_TIM_PWM_Start(tim_, ch_A_);
+    HAL_TIM_PWM_Start(tim_, ch_B_);
+    stop();
+}
+
+void Motor::setTarget(int16_t target){
+    this->target = target;
+}
+
+void Motor::control(){
+    if(mode == 0){ // PWM mode
+        PWMModeControl();
+    } else if(mode == 1){ // ENCODER mode
+        EncoderModeControl();
+    } else if(mode == 2){ // CURRENT mode
+        // Not implemented
+    }
+}
+
+
+void Motor::PWMModeControl(){
+    if(target > 0){
+        __HAL_TIM_SET_COMPARE(tim_, ch_A_, target);
+        __HAL_TIM_SET_COMPARE(tim_, ch_B_, 0);
+    } else {
+        __HAL_TIM_SET_COMPARE(tim_, ch_A_, 0);
+        __HAL_TIM_SET_COMPARE(tim_, ch_B_, abs(target));
+    }
+}
+
+void Motor::EncoderModeControl(){
+    int16_t feedback = 0;
+    if(get_encoder_fp_ != nullptr){
+        feedback = get_encoder_fp_();
+    }
+
+    if(feedback == 0){
+        __HAL_TIM_SET_COMPARE(tim_, ch_A_, 0);
+        __HAL_TIM_SET_COMPARE(tim_, ch_B_, 0);
+    }
+
+    int32_t control = pid_.calc(abs(target), feedback);
+    if (target < 0){
+        __HAL_TIM_SET_COMPARE(tim_, ch_A_, control);
+        __HAL_TIM_SET_COMPARE(tim_, ch_B_, 0);
+    } else {
+        __HAL_TIM_SET_COMPARE(tim_, ch_A_, 0);
+        __HAL_TIM_SET_COMPARE(tim_, ch_B_, control);
+    }
+}
+
+void Motor::start(){
+    HAL_GPIO_WritePin(SD_port_, SD_pin_, GPIO_PIN_SET);
+    pid_.reset();
+}
+
+void Motor::stop(){
+    HAL_GPIO_WritePin(SD_port_, SD_pin_, GPIO_PIN_RESET);
+    __HAL_TIM_SET_COMPARE(tim_, ch_A_, 0);
+    __HAL_TIM_SET_COMPARE(tim_, ch_B_, 0);
+    pid_.reset();
+}

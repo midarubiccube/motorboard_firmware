@@ -17,6 +17,7 @@ set(Application_Src
     ${CMAKE_SOURCE_DIR}/firmware/src/FullColorLED.cpp
     ${CMAKE_SOURCE_DIR}/firmware/src/CANFD.cpp
     ${CMAKE_SOURCE_DIR}/firmware/src/PID.cpp
+    ${CMAKE_SOURCE_DIR}/firmware/src/Motor.cpp
 )
 
 set(Include_Dirs
