@@ -1,10 +1,12 @@
 #include "main.h"
 #include <cstring>
 #include <cstdio>
+#include <cstdlib>
 
 #include "CANFD.hpp"
 #include "FullColorLED.hpp"
 #include <PID.hpp>
+#include "message.hpp" 
 
 
 /*PID pid1;
@@ -85,19 +87,19 @@ extern "C" void StartDefaultTask(void *argument)
   
   	canfd = new CANFD(&hfdcan1);
 	canfd->start();
-	//canfd->set_filter_mask(can_id, 0x1FFFFFFF)
+	canfd->set_filter_mask(2097152, 0x1FFFFFFF);
 
 	CANFD_Frame test;
 	test.id=can_id;
 	test.size = 32;
 	for (int i = 0; i < 32; i++) test.data[i] = i;
-	canfd->tx(test);
+	//canfd->tx(test);
 
   	/*pid1.set_limit(10, 900);
 	pid1.set_gain(5,3,0.2);
 	//pid1.set_gain(0.3,2,0.2);
 	pid2.set_limit(10, 900);
-	//pid2.set_gain(5,3,0.2);
+	//pid2.set_gain(5,3,0.2);i
 	pid2.set_gain(0.3,2,0.2);
 
 	pid3.set_limit(10, 900);
@@ -129,31 +131,33 @@ extern "C" void StartDefaultTask(void *argument)
 	HAL_GPIO_WritePin(SD_3_GPIO_Port, SD_3_Pin, GPIO_PIN_SET);
 
 	PID pid1{true, 0.01};
-	pid1.set_limit(10, 100);
+	pid1.set_limit(10, 800);
 	pid1.set_gain(1,0.001, 0.2);;
-	__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, 10);
- 	 while (1)
+	int target = 0;
+ 	while (1)
   	{
-		//int32_t encoder = get_encoder2();
-		//int pwm = (int)pid1.calc(200.0, (float)encoder);
-		__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, 200);
-		__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_3, 200);
-		__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, 200);
-		__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_3, 200);
-		osDelay(1000);
-		__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, 0);
-		__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_3, 0);
-		__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, 0);
-		__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_3, 0);
+		int32_t encoder = get_encoder4();
+		if (target < 0){
+			__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_3, abs(target));
+			__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_3, abs(target));
+			__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_4, 0);
+			__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_4, 0);
+		} else {
+			__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_4, target);
+			__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_4, target);
+			__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_3, 0);
+			__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_3, 0);
+		}
 
-		__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, 200);
-		__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_4, 200);
-		__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, 200);
-		__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_4, 200);
-		osDelay(1000);
-		__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, 0);
-		__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_4, 0);
-		__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, 0);
-		__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_4, 0);
+		if (canfd->rx_available())
+    	{
+      		CANFD_Frame data;
+      		canfd->rx(data);
+      		Message_format msg = {0};
+      		memcpy(&msg.data, data.data, 32);
+			target = msg.data.motor_rsv.target;
+			printf("%d\n", target);
+    	}
+		osDelay(10);
   	}
 }
