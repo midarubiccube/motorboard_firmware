@@ -14,6 +14,9 @@ PID pid2;
 PID pid3;
 PID pid4;*/
 
+extern osTimerId_t controlTimerHandle;
+
+
 int32_t get_encoder1( void )
 {
 	  uint16_t enc_buff = LPTIM1->CNT;
@@ -59,8 +62,8 @@ int32_t get_encoder3( void )
 
 int32_t get_encoder4( void )
 {
-	  uint16_t enc_buff = TIM8->CNT;
-	  TIM8->CNT = 0;
+	  uint16_t enc_buff = TIM4->CNT;
+	  TIM4->CNT = 0;
 	  if (enc_buff > 32767)
 	  {
 	    return (int16_t)enc_buff * -1;
@@ -78,6 +81,9 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
     canfd->rx_interrupt_task();
   }
 }
+
+PID pid1{true, 0.01};
+
 
 extern "C" void StartDefaultTask(void *argument)
 {
@@ -130,34 +136,36 @@ extern "C" void StartDefaultTask(void *argument)
 	HAL_GPIO_WritePin(SD_2_GPIO_Port, SD_2_Pin, GPIO_PIN_SET);
 	HAL_GPIO_WritePin(SD_3_GPIO_Port, SD_3_Pin, GPIO_PIN_SET);
 
-	PID pid1{true, 0.01};
-	pid1.set_limit(10, 800);
-	pid1.set_gain(1,0.001, 0.2);;
-	int target = 0;
- 	while (1)
-  	{
-		int32_t encoder = get_encoder4();
-		if (target < 0){
-			__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_3, abs(target));
-			__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_3, abs(target));
-			__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_4, 0);
-			__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_4, 0);
-		} else {
-			__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_4, target);
-			__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_4, target);
-			__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_3, 0);
-			__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_3, 0);
-		}
+	pid1.set_limit(0, 50);
+	pid1.set_gain(0.05,0.001, 0.0001);
+	osTimerStart(controlTimerHandle, 10);
 
-		if (canfd->rx_available())
-    	{
-      		CANFD_Frame data;
-      		canfd->rx(data);
-      		Message_format msg = {0};
-      		memcpy(&msg.data, data.data, 32);
-			target = msg.data.motor_rsv.target;
-			printf("%d\n", target);
-    	}
-		osDelay(10);
+	for(;;)
+  	{
+    	osDelay(1000);
   	}
+}
+
+int target = 0;
+
+extern "C" void controlCallback(void *argument)
+{
+	int32_t encoder = get_encoder4();
+	int32_t control = pid1.calc(abs(target/2), encoder);
+	if (target < 0){
+		__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_3, control);
+		__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_4, 0);
+	} else {
+		__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_4, control);
+		__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_3, 0);
+	}
+
+	if (canfd->rx_available())
+    {
+      	CANFD_Frame data;
+      	canfd->rx(data);
+      	Message_format msg = {0};
+      	memcpy(&msg.data, data.data, 32);
+		target = msg.data.motor_rsv.target;		
+    }
 }

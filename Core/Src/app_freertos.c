@@ -60,6 +60,11 @@ const osThreadAttr_t defaultTask_attributes = {
   .cb_size = sizeof(defaultTaskControlBlock),
   .priority = (osPriority_t) osPriorityNormal,
 };
+/* Definitions for controlTimer */
+osTimerId_t controlTimerHandle;
+const osTimerAttr_t controlTimer_attributes = {
+  .name = "controlTimer"
+};
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -67,6 +72,7 @@ const osThreadAttr_t defaultTask_attributes = {
 /* USER CODE END FunctionPrototypes */
 
 void StartDefaultTask(void *argument);
+void controlCallback(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -87,6 +93,10 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN RTOS_SEMAPHORES */
   /* add semaphores, ... */
   /* USER CODE END RTOS_SEMAPHORES */
+
+  /* Create the timer(s) */
+  /* creation of controlTimer */
+  controlTimerHandle = osTimerNew(controlCallback, osTimerPeriodic, NULL, &controlTimer_attributes);
 
   /* USER CODE BEGIN RTOS_TIMERS */
   /* start timers, add new ones, ... */
@@ -126,6 +136,14 @@ __weak void StartDefaultTask(void *argument)
     osDelay(1);
   }
   /* USER CODE END StartDefaultTask */
+}
+
+/* controlCallback function */
+__weak void controlCallback(void *argument)
+{
+  /* USER CODE BEGIN controlCallback */
+
+  /* USER CODE END controlCallback */
 }
 
 /* Private application code --------------------------------------------------*/
