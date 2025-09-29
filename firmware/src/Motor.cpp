@@ -1,6 +1,7 @@
 #include "Motor.hpp"
 
 #include <cstdlib>
+#include <cstdio>
 
 #include <string.h>
 
@@ -16,7 +17,6 @@ void Motor::init(){
 void Motor::setTarget(int16_t target){
     this->target = target;
 }
-
 void Motor::control(){
     if(mode == 0){ // PWM mode
         PWMModeControl();
@@ -47,16 +47,18 @@ void Motor::EncoderModeControl(){
     if(feedback == 0){
         __HAL_TIM_SET_COMPARE(tim_, ch_A_, 0);
         __HAL_TIM_SET_COMPARE(tim_, ch_B_, 0);
+        pid_.reset();
     }
 
     int32_t control = pid_.calc(abs(target), feedback);
     if (target < 0){
-        __HAL_TIM_SET_COMPARE(tim_, ch_A_, control);
+        __HAL_TIM_SET_COMPARE(tim_, ch_A_, abs(control));
         __HAL_TIM_SET_COMPARE(tim_, ch_B_, 0);
     } else {
         __HAL_TIM_SET_COMPARE(tim_, ch_A_, 0);
         __HAL_TIM_SET_COMPARE(tim_, ch_B_, control);
     }
+    //printf("t:%d f:%d c:%d\r\n", target, feedback, control);
 }
 
 void Motor::start(){

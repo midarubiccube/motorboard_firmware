@@ -2,14 +2,14 @@
 
 #include <cstdio>
 
+
 int32_t get_encoder1( void )
 {
-	  uint16_t enc_buff = LPTIM1->CNT;
-	  printf("%d\n", LPTIM1->CNT);
-	  LPTIM1->CNT = 0;
-	  if (enc_buff > 32767)
+	  int16_t enc_buff = LPTIM1->CNT;
+	  LPTIM1->CR |= LPTIM_CR_RSTARE;
+	  if (enc_buff > 2048)
 	  {
-	    return (int16_t)enc_buff * -1;
+	    return (int16_t)(0xfff-enc_buff);
 	  }
 	  else
 	  {

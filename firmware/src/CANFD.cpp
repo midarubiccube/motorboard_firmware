@@ -4,6 +4,7 @@
 #include "FullColorLED.hpp"
 #include "fdcan.h"
 #include "message.hpp"
+#include <cstdio>
 
 void CANFD::start(){
 	if (HAL_FDCAN_ConfigGlobalFilter(fdcan_, FDCAN_REJECT, FDCAN_REJECT, FDCAN_ACCEPT_IN_RX_FIFO0, FDCAN_ACCEPT_IN_RX_FIFO0) != HAL_OK)
@@ -22,14 +23,15 @@ void CANFD::start(){
 bool CANFD::tx(CANFD_Frame &tx_data){
 	FDCAN_TxHeaderTypeDef	TxHeader;
 	TxHeader.Identifier = tx_data.id;
-	TxHeader.IdType = FDCAN_STANDARD_ID;
-	TxHeader.TxFrameType = FDCAN_DATA_FRAME;
+	TxHeader.IdType = FDCAN_EXTENDED_ID;
+	TxHeader.TxFrameType = tx_data.is_remote ? FDCAN_REMOTE_FRAME : FDCAN_DATA_FRAME;
 	TxHeader.DataLength = FDCAN_DLC_BYTES_32;
 	TxHeader.ErrorStateIndicator = FDCAN_ESI_ACTIVE;
 	TxHeader.BitRateSwitch = FDCAN_BRS_ON;
 	TxHeader.FDFormat = FDCAN_FD_CAN;
 	TxHeader.TxEventFifoControl = FDCAN_NO_TX_EVENTS;
 	TxHeader.MessageMarker = 0;
+	
 
 	// Prepare first Tx data for fdcan1
 	for (size_t i = 0; i < tx_data.size; i++) {
@@ -68,6 +70,10 @@ void CANFD::rx_interrupt_task(void){
 	rx_buff[head].size = RxHeader.DataLength;
  	memcpy(&rx_buff[head].data, fdcan1RxData, 64);
 	rx_buff[head].is_free = false;
+	rx_buff[head].is_remote = RxHeader.RxFrameType == FDCAN_REMOTE_FRAME;
+	if (RxHeader.RxFrameType == FDCAN_REMOTE_FRAME) {
+		printf("remote frame id=%lu size=%lu\n", RxHeader.Identifier, RxHeader.DataLength);
+	}
 
 	head = (head+1)&CAN_RX_BUFF_AND;
 }
