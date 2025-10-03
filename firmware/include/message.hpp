@@ -38,12 +38,8 @@ struct PowerBoard_send
 
 struct MotorBoard_receive
 {
-  uint8_t mode;
-  int target;
-  float GAIN_P = -1;
-  float GAIN_I = -1;
-  float GAIN_D = -1;
-  float MAX_current;
+  uint8_t modem;
+  int target[4];
   bool must_receive;
 };
 
