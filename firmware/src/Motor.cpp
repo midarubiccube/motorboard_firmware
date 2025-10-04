@@ -18,11 +18,11 @@ void Motor::setTarget(int16_t target){
      this->target = target;
 }
 void Motor::control(){
-    if(mode == 0){ // PWM mode
+    if(mode == ControlMode::PWM_Mode){ // PWM mode
         PWMModeControl();
-    } else if(mode == 1){ // ENCODER mode
+    } else if(mode == ControlMode::Encoder_Mode){ // ENCODER mode
         EncoderModeControl();
-    } else if(mode == 2){ // CURRENT mode
+    } else if(mode == ControlMode::Current_Mode){ // CURRENT mode
         // Not implemented
     }
 }
