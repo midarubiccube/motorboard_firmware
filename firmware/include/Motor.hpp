@@ -4,7 +4,7 @@
 
 #include "main.h"
 #include "PID.hpp"
-#include "message/motorBoard.hpp"
+#include "messageFormat/motorBoard.hpp"
 
 class Motor{
 public:
