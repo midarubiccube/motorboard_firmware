@@ -66,7 +66,7 @@ extern "C" void StartDefaultTask(void *argument)
 			for (int i = 0; i < 4; i++)
 			{
 				motors[i]->setTarget(target_msg->target[i]);
-				motors[i]->setMode(target_msg->modem);
+				motors[i]->setMode(target_msg->mode);
 			}
 		}
 		osDelay(5);
