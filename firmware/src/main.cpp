@@ -25,13 +25,18 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 
 extern "C" void StartDefaultTask(void *argument)
 {
+	uint8_t id = HAL_GPIO_ReadPin(ID0_GPIO_Port, ID0_Pin) |
+				(HAL_GPIO_ReadPin(ID1_GPIO_Port, ID1_Pin) << 1) |
+				(HAL_GPIO_ReadPin(ID2_GPIO_Port, ID2_Pin) << 2) |
+				(HAL_GPIO_ReadPin(ID3_GPIO_Port, ID3_Pin) << 3);
+
 	canfd = new CANFD(&hfdcan1);
 	canfd->start();
 	ID_Format filter_id;
 	canfd->set_filter_mask(0, 0x100000, 0x100000);
 	filter_id.id = 0;
 	filter_id.format.to_BoardType = Board_Type::MotorBoard;
-	filter_id.format.to_BoardID = 0;
+	filter_id.format.to_BoardID = id;
 	canfd->set_filter_mask(1, filter_id.id, 0xFF);
 
 	motors[0] = new Motor(&htim2, TIM_CHANNEL_1, TIM_CHANNEL_2, SD_0_GPIO_Port, SD_0_Pin, get_encoder1);
