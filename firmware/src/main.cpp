@@ -28,12 +28,11 @@ extern "C" void StartDefaultTask(void *argument)
 	canfd = new CANFD(&hfdcan1);
 	canfd->start();
 	ID_Format filter_id;
+	canfd->set_filter_mask(0, 0x100000, 0x100000);
 	filter_id.id = 0;
-	filter_id.format.from_BoardType = Board_Type::Master_Board;
 	filter_id.format.to_BoardType = Board_Type::MotorBoard;
-	filter_id.format.message_type = Message_Type::Target;
 	filter_id.format.to_BoardID = 0;
-	canfd->set_filter_mask(filter_id.id, 0x1FF);
+	canfd->set_filter_mask(1, filter_id.id, 0xFF);
 
 	motors[0] = new Motor(&htim2, TIM_CHANNEL_1, TIM_CHANNEL_2, SD_0_GPIO_Port, SD_0_Pin, get_encoder1);
 	motors[1] = new Motor(&htim3, TIM_CHANNEL_1, TIM_CHANNEL_2, SD_1_GPIO_Port, SD_1_Pin, get_encoder2);
