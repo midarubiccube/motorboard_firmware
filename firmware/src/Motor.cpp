@@ -48,6 +48,7 @@ void Motor::EncoderModeControl(){
         __HAL_TIM_SET_COMPARE(tim_, ch_A_, 0);
         __HAL_TIM_SET_COMPARE(tim_, ch_B_, 0);
         pid_.reset();
+        return;
     }
 
     int32_t control = pid_.calc(abs(target), feedback);

@@ -60,7 +60,7 @@ extern "C" void StartDefaultTask(void *argument)
 	HAL_TIM_Encoder_Start(&htim4, TIM_CHANNEL_ALL);
 	HAL_TIM_Encoder_Start(&htim8, TIM_CHANNEL_ALL);
 
-	osTimerStart(controlTimerHandle, 5);
+	osTimerStart(controlTimerHandle, 10);
 
 	for (;;)
 	{
@@ -83,5 +83,4 @@ extern "C" void controlCallback(void *argument)
 {
 	for (auto m : motors)
 		m->control();
-	printf("%d %d %d %d \n", motors[0]->gettarget(), motors[1]->gettarget(), motors[2]->gettarget(), motors[3]->gettarget());
 }
