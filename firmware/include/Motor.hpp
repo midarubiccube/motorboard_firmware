@@ -33,6 +33,7 @@ public:
     }
     void stop();
     void start();
+    int16_t gettarget() { return target; }
 private:
     PID pid_;
     TIM_HandleTypeDef* tim_;
