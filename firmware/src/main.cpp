@@ -13,7 +13,7 @@
 
 extern osTimerId_t controlTimerHandle;
 CANFD *canfd;
-std::array<Motor *, 4> motors;
+std::array<Motor *, 3> motors;
 
 void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 {
@@ -42,9 +42,8 @@ extern "C" void StartDefaultTask(void *argument)
 	canfd->set_filter_mask(1, filter_id.id, 0xFF);
 
 	motors[0] = new Motor(&htim2, TIM_CHANNEL_1, TIM_CHANNEL_2, SD_0_GPIO_Port, SD_0_Pin, get_encoder1);
-	motors[1] = new Motor(&htim3, TIM_CHANNEL_1, TIM_CHANNEL_2, SD_1_GPIO_Port, SD_1_Pin, get_encoder2);
-	motors[2] = new Motor(&htim3, TIM_CHANNEL_3, TIM_CHANNEL_4, SD_2_GPIO_Port, SD_2_Pin, get_encoder3);
-	motors[3] = new Motor(&htim2, TIM_CHANNEL_4, TIM_CHANNEL_3, SD_3_GPIO_Port, SD_3_Pin, get_encoder4);
+	motors[1] = new Motor(&htim3, TIM_CHANNEL_3, TIM_CHANNEL_4, SD_2_GPIO_Port, SD_2_Pin, get_encoder3);
+	motors[2] = new Motor(&htim2, TIM_CHANNEL_4, TIM_CHANNEL_3, SD_3_GPIO_Port, SD_3_Pin, get_encoder4);
 
 	for (auto m : motors)
 	{
@@ -60,7 +59,12 @@ extern "C" void StartDefaultTask(void *argument)
 	HAL_TIM_Encoder_Start(&htim4, TIM_CHANNEL_ALL);
 	HAL_TIM_Encoder_Start(&htim8, TIM_CHANNEL_ALL);
 
+	HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2);
+
 	osTimerStart(controlTimerHandle, 10);
+
+	__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, 950);
+	osDelay(5000);
 
 	for (;;)
 	{
@@ -69,13 +73,19 @@ extern "C" void StartDefaultTask(void *argument)
 			CANFD_Frame data;
 			canfd->rx(data);
 			auto target_msg = reinterpret_cast<MotorBoard_Target *>(data.data);
-			for (int i = 0; i < 4; i++)
+			motors[2]->setTarget(target_msg->target[3]);
+			motors[2]->setMode(target_msg->mode);
+			if (target_msg->target[1] == 1)
 			{
-				motors[i]->setTarget(target_msg->target[i]);
-				motors[i]->setMode(target_msg->mode);
+
+				__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, 930);
+			}
+			else
+			{
+				__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, 950);
 			}
 		}
-		osDelay(5);
+		osDelay(100);
 	}
 }
 
