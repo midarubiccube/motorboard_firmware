@@ -44,12 +44,12 @@ void Motor::EncoderModeControl(){
         feedback = get_encoder_fp_();
     }
 
-    if(feedback == 0 && target != 0){
+    /*if(feedback == 0 && target != 0){
         __HAL_TIM_SET_COMPARE(tim_, ch_A_, 0);
         __HAL_TIM_SET_COMPARE(tim_, ch_B_, 0);
         pid_.reset();
         return;
-    }
+    }*/
 
     int32_t control = pid_.calc(abs(target), feedback);
     if (target < 0){
