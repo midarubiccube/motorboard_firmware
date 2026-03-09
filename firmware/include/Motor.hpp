@@ -23,7 +23,7 @@ public:
         this->mode = mode;
     }
 
-    void control();
+    void control(int test);
 
     void setPIDGain(float kp, float ki, float kd) {
         pid_.set_gain(kp, ki, kd);
@@ -44,7 +44,7 @@ private:
     getEncoder_fp get_encoder_fp_;
 
     void PWMModeControl();
-    void EncoderModeControl();
+    void EncoderModeControl(int test);
     void CurrentModeControl();
 
     int16_t target = 0;
