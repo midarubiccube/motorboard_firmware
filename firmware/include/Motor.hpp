@@ -43,7 +43,7 @@ private:
     uint16_t SD_pin_;
     getEncoder_fp get_encoder_fp_;
 
-    void PWMModeControl();
+    void PWMModeControl(int test);
     void EncoderModeControl(int test);
     void CurrentModeControl();
 

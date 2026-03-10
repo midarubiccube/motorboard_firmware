@@ -45,7 +45,7 @@ int32_t get_encoder3( void )
 	  }
 }
 
-int32_t get_encoder4( void )
+/*int32_t get_encoder4( void )
 {
 	  uint16_t enc_buff = TIM4->CNT;
 	  TIM4->CNT = 0;
@@ -57,4 +57,4 @@ int32_t get_encoder4( void )
 	  {
 	    return (int16_t)enc_buff;
 	  }
-}
+}*/

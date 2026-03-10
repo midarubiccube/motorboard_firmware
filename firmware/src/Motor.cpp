@@ -6,6 +6,7 @@
 #include <string.h>
 
 #include "main.h"
+#include "usart.h"
 
 
 void Motor::init(){
@@ -19,7 +20,7 @@ void Motor::setTarget(int16_t target){
 }
 void Motor::control(int test){
     if(mode == ControlMode::PWM_Mode){ // PWM mode
-        PWMModeControl();
+        PWMModeControl(test);
     } else if(mode == ControlMode::Encoder_Mode){ // ENCODER mode
         EncoderModeControl(test);
     } else if(mode == ControlMode::Current_Mode){ // CURRENT mode
@@ -28,7 +29,9 @@ void Motor::control(int test){
 }
 
 
-void Motor::PWMModeControl(){
+void Motor::PWMModeControl(int test){
+
+    
     if(target > 0){
         __HAL_TIM_SET_COMPARE(tim_, ch_A_, target);
         __HAL_TIM_SET_COMPARE(tim_, ch_B_, 0);
