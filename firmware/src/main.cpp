@@ -14,6 +14,7 @@
 extern osTimerId_t controlTimerHandle;
 CANFD *canfd;
 std::array<Motor *, 4> motors;
+int angle = 1000;
 
 namespace
 {
@@ -25,32 +26,32 @@ namespace
 	int last_target_position = 0;
 	int last_position = 0;
 
-	void sendSts3215GoalPositionUsart1(uint8_t id, int16_t position, int16_t speed)
+	void sendSts3215GoalPositionUsart1(uint8_t id, int16_t   position, int acc, int speed)
 	{
 		// STS3215(Protocol 1.0互換):
-		// 0xFF 0xFF ID LEN INST ADDR POS_L POS_H CHKSUM
+		// 0xFF 0xFF ID LEN INST ADDR DATA... CHKSUM
 		uint8_t packet[13];
-		packet[0] = 0xFF;
-		packet[1] = 0xFF;
-		packet[2] = id;
-		packet[3] = 0x05; // INST + ADDR + 2byte data + CHKSUM
-		packet[4] = kInstructionWrite;
-		packet[5] = kAddrGoalPositionL;
-		packet[6] = position & 0xFF;
-		packet[7] = (position >> 8) & 0xFF;
-		packet[8] = 0x00;	// 時間情報バイト下位
-		packet[9] = 0x00;	// 時間情報バイト上位
-		packet[10] = static_cast<uint8_t>(speed & 0xFF);
-		packet[11] = static_cast<uint8_t>((speed >> 8) & 0xFF);
+  		packet[0] = 0xFF;  // ヘッダ
+  		packet[1] = 0xFF;  // ヘッダ
+ 		packet[2] = id;    // サーボID
+  		packet[3] = 9;    // パケットデータ長(INST～CHKSUM直前)
+  		packet[4] = 3;     // コマンド（3は書き込み命令）
+  		packet[5] = 0x2A;  // レジスタ先頭番号(ゴール位置)
+		packet[6] = position & 0xFF; // 位置情報バイト下位
+		packet[7] = (position >> 8) & 0xFF; // 位置情報バイト上位
+		packet[8] = acc & 0xFF; // 加速度バイト下位
+		packet[9] = (acc >> 8) & 0xFF; // 加速度バイト上位
+		packet[10] = speed & 0xFF; // 速度バイト下位
+		packet[11] = (speed >> 8) & 0xFF; // 速度バイト上位
 
 		uint8_t sum = 0;
-		for (int i = 2; i <= 12; ++i)
+		for (int i = 2; i < 12; ++i)
 		{
 			sum += packet[i];
 		}
 		packet[12] = static_cast<uint8_t>(~sum);
 
-		HAL_UART_Transmit(&huart1, packet, sizeof(packet), 10);
+ 		HAL_UART_Transmit(&huart1, packet, sizeof(packet), 10);
 	}
 
 	void sendSts3215GoalSpeedUsart1(uint8_t id, int16_t speed)
@@ -61,9 +62,9 @@ namespace
 		packet[0] = 0xFF;
 		packet[1] = 0xFF;
 		packet[2] = id;
-		packet[3] = 0x05;
-		packet[4] = kInstructionWrite;
-		packet[5] = kAddrGoalPositionL;
+		packet[3] = 5; // パケットデータ長(INST～CHKSUM直前)
+		packet[4] = 3;
+		packet[5] = 0x2E;
 		packet[6] = speed & 0xFF;
 		packet[7] = (speed >> 8) & 0xFF;
 
@@ -73,6 +74,29 @@ namespace
 			sum += packet[i];
 		}
 		packet[8] = static_cast<uint8_t>(~sum);
+
+		HAL_UART_Transmit(&huart1, packet, sizeof(packet), 10);
+	}
+
+	void sendSts3215ModeStepUsart1(uint8_t id)
+	{
+		// STS3215(Protocol 1.0互換) モード設定:
+		// 0xFF 0xFF ID LEN INST ADDR MODE CHKSUM
+		uint8_t packet[8];
+		packet[0] = 0xFF;      // ヘッダ
+		packet[1] = 0xFF;      // ヘッダ
+		packet[2] = id;        // サーボID
+		packet[3] = 0x04;      // パケットデータ長(INST～CHKSUM直前)
+		packet[4] = 0x03;      // コマンド（3は書き込み命令）
+		packet[5] = 33;      // レジスタアドレス(Operating Mode)
+		packet[6] = 0;      // モード値
+
+		uint8_t sum = 0;
+		for (int i = 2; i < 7; ++i)
+		{
+			sum += packet[i];
+		}
+		packet[7] = static_cast<uint8_t>(~sum);
 
 		HAL_UART_Transmit(&huart1, packet, sizeof(packet), 10);
 	}
@@ -88,6 +112,8 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 
 extern "C" void StartDefaultTask(void *argument)
 {
+	sendSts3215ModeStepUsart1(1);
+	sendSts3215GoalPositionUsart1(1, angle, 0, 4000);
 	uint8_t id = HAL_GPIO_ReadPin(ID0_GPIO_Port, ID0_Pin) |
 				 (HAL_GPIO_ReadPin(ID1_GPIO_Port, ID1_Pin) << 1) |
 				 (HAL_GPIO_ReadPin(ID2_GPIO_Port, ID2_Pin) << 2) |
@@ -134,22 +160,28 @@ extern "C" void StartDefaultTask(void *argument)
 			auto target_msg = reinterpret_cast<MotorBoard_Target *>(data.data);
  			if (target_msg->target[0] != 0)
 			{
-				sendSts3215GoalSpeedUsart1(1, static_cast<int16_t>(target_msg->target[0]);
+				angle += target_msg->target[0]*2;
+				if (angle < 9000 &&angle >=1000) {
+					sendSts3215GoalPositionUsart1(1, angle, 0, 4000);
+				} else {
+					angle -= target_msg->target[0]*2;
+				}
+			} else {
+				//sendSts3215GoalPositionUsart1(1,angle, 0, 0);
 			}
 
 			if (last_target_position != target_msg->target[1] && target_msg->target[1] != 0)
 			{
-				last_target_position = target_msg->target[1];
+0				last_target_position = target_msg->target[1];
 				if (last_position == 0)
 				{
 					last_position = 4096;
-
-					sendSts3215GoalSpeedUsart1(2, 4096);
+					sendSts3215GoalPositionUsart1(2, 4096, 0, 0);
 				}
 				else
 				{
 					last_position = 0;
-					sendSts3215GoalSpeedUsart1(2, 0);
+					sendSts3215GoalPositionUsart1(2, 0, 0, 0);
 				}
 			}
 			last_target_position = target_msg->target[1];
