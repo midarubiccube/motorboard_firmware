@@ -11,14 +11,16 @@
 
 #include "messageFormat/motorBoard.hpp"
 
-extern osTimerId_t controlTimerHandle;
 CANFD *canfd;
+FullColorLED led{&htim20, TIM_CHANNEL_3};
+
+extern osTimerId_t controlTimerHandle;
 std::array<Motor *, 4> motors;
 int angle = 1000;
 
 namespace
 {
-	constexpr uint8_t kSts3215Id = 1;			// サーボID
+	constexpr uint8_t kSts3215Id = 0;			// サーボID
 	constexpr uint8_t kInstructionWrite = 0x03; // WRITE_DATA
 	constexpr uint8_t kAddrGoalPositionL = 0x2A;
 	constexpr uint8_t kAddrGoalSpeedL = 0x2E; // モード3用速度アドレス
@@ -26,23 +28,23 @@ namespace
 	int last_target_position = 0;
 	int last_position = 0;
 
-	void sendSts3215GoalPositionUsart1(uint8_t id, int16_t   position, int acc, int speed)
+	void sendSts3215GoalPositionUsart1(uint8_t id, int16_t position)
 	{
 		// STS3215(Protocol 1.0互換):
 		// 0xFF 0xFF ID LEN INST ADDR DATA... CHKSUM
 		uint8_t packet[13];
   		packet[0] = 0xFF;  // ヘッダ
   		packet[1] = 0xFF;  // ヘッダ
- 		packet[2] = id;    // サーボID
-  		packet[3] = 9;    // パケットデータ長(INST～CHKSUM直前)
+  		packet[2] = id;    // サーボID
+  		packet[3] = 9;     // パケットデータ長
   		packet[4] = 3;     // コマンド（3は書き込み命令）
-  		packet[5] = 0x2A;  // レジスタ先頭番号(ゴール位置)
+		packet[5] = 42;    // レジスタ先頭番号
 		packet[6] = position & 0xFF; // 位置情報バイト下位
-		packet[7] = (position >> 8) & 0xFF; // 位置情報バイト上位
-		packet[8] = acc & 0xFF; // 加速度バイト下位
-		packet[9] = (acc >> 8) & 0xFF; // 加速度バイト上位
-		packet[10] = speed & 0xFF; // 速度バイト下位
-		packet[11] = (speed >> 8) & 0xFF; // 速度バイト上位
+  		packet[7] = (position >> 8) & 0xFF; // 位置情報バイト上位
+  		packet[8] = 0x00;  // 時間情報バイト下位
+  		packet[9] = 0x00;  // 時間情報バイト上位
+  		packet[10] = 0x00; // 速度情報バイト下位
+  		packet[11] = 0x00; // 速度情報バイト上位	
 
 		uint8_t sum = 0;
 		for (int i = 2; i < 12; ++i)
@@ -51,7 +53,7 @@ namespace
 		}
 		packet[12] = static_cast<uint8_t>(~sum);
 
- 		HAL_UART_Transmit(&huart1, packet, sizeof(packet), 10);
+ 		HAL_UART_Transmit(&huart4, packet, sizeof(packet), 10);
 	}
 
 	void sendSts3215GoalSpeedUsart1(uint8_t id, int16_t speed)
@@ -75,8 +77,33 @@ namespace
 		}
 		packet[8] = static_cast<uint8_t>(~sum);
 
-		HAL_UART_Transmit(&huart1, packet, sizeof(packet), 10);
+		HAL_UART_Transmit(&huart4, packet, sizeof(packet), 10);
 	}
+
+	void STS3215_SetID_Broadcast(uint8_t new_id)
+	{
+    	uint8_t packet[8];
+    	packet[0] = 0xFF;
+    	packet[1] = 0xFF;
+    	// Broadcast ID
+    	packet[2] = 0xFE;
+    	// Length = Instruction + Address + Data + Checksum
+    	packet[3] = 0x04;
+    	// WRITE
+    	packet[4] = 0x03;
+    	// ID register
+    	packet[5] = 0x05;
+    	// New ID
+    	packet[6] = new_id;
+    	// Checksum
+    	uint8_t sum = packet[2] +
+                  packet[3] +
+                  packet[4] +
+                  packet[5] +
+                  packet[6];
+    	packet[7] = ~sum;
+    	HAL_UART_Transmit(&huart4, packet, sizeof(packet), 100);
+}
 
 	void sendSts3215ModeStepUsart1(uint8_t id)
 	{
@@ -98,7 +125,7 @@ namespace
 		}
 		packet[7] = static_cast<uint8_t>(~sum);
 
-		HAL_UART_Transmit(&huart1, packet, sizeof(packet), 10);
+		HAL_UART_Transmit(&huart4, packet, sizeof(packet), 10);
 	}
 } // namespace
 
@@ -110,10 +137,15 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 	}
 }
 
+
 extern "C" void StartDefaultTask(void *argument)
 {
-	sendSts3215ModeStepUsart1(1);
-	sendSts3215GoalPositionUsart1(1, angle, 0, 4000);
+	led.start();
+	led.set_rgb(0, 255, 0);
+
+	sendSts3215ModeStepUsart1(0);
+	sendSts3215GoalPositionUsart1(0,2000);
+
 	uint8_t id = HAL_GPIO_ReadPin(ID0_GPIO_Port, ID0_Pin) |
 				 (HAL_GPIO_ReadPin(ID1_GPIO_Port, ID1_Pin) << 1) |
 				 (HAL_GPIO_ReadPin(ID2_GPIO_Port, ID2_Pin) << 2) |
@@ -158,32 +190,6 @@ extern "C" void StartDefaultTask(void *argument)
 			CANFD_Frame data;
 			canfd->rx(data);
 			auto target_msg = reinterpret_cast<MotorBoard_Target *>(data.data);
- 			if (target_msg->target[0] != 0)
-			{
-				angle += target_msg->target[0]*2;
-				if (angle < 9000 &&angle >=1000) {
-					sendSts3215GoalPositionUsart1(1, angle, 0, 4000);
-				} else {
-					angle -= target_msg->target[0]*2;
-				}
-			} else {
-				//sendSts3215GoalPositionUsart1(1,angle, 0, 0);
-			}
-
-			if (last_target_position != target_msg->target[1] && target_msg->target[1] != 0)
-			{
-0				last_target_position = target_msg->target[1];
-				if (last_position == 0)
-				{
-					last_position = 4096;
-					sendSts3215GoalPositionUsart1(2, 4096, 0, 0);
-				}
-				else
-				{
-					last_position = 0;
-					sendSts3215GoalPositionUsart1(2, 0, 0, 0);
-				}
-			}
 			last_target_position = target_msg->target[1];
 
 			motors[2]->setTarget(target_msg->target[2]);
@@ -191,13 +197,6 @@ extern "C" void StartDefaultTask(void *argument)
 			motors[3]->setTarget(target_msg->target[3]);
 			motors[3]->setMode(ControlMode::PWM_Mode);
 		}
-		HAL_ADC_Start(&hadc1);
-		if (HAL_ADC_PollForConversion(&hadc1, 1000) == HAL_OK)
-		{
-			uint32_t ad = HAL_ADC_GetValue(&hadc1);
-			// printf("%d\n", ad);
-		}
-		HAL_ADC_Stop(&hadc1);
 		osDelay(10);
 	}
 }
