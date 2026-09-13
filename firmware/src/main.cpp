@@ -53,7 +53,7 @@ namespace
 		}
 		packet[12] = static_cast<uint8_t>(~sum);
 
- 		HAL_UART_Transmit(&huart4, packet, sizeof(packet), 10);
+ 		HAL_UART_Transmit(&huart1, packet, sizeof(packet), 10);
 	}
 
 	void sendSts3215GoalSpeedUsart1(uint8_t id, int16_t speed)
@@ -77,7 +77,7 @@ namespace
 		}
 		packet[8] = static_cast<uint8_t>(~sum);
 
-		HAL_UART_Transmit(&huart4, packet, sizeof(packet), 10);
+		HAL_UART_Transmit(&huart1, packet, sizeof(packet), 10);
 	}
 
 	void STS3215_SetID_Broadcast(uint8_t new_id)
@@ -102,7 +102,7 @@ namespace
                   packet[5] +
                   packet[6];
     	packet[7] = ~sum;
-    	HAL_UART_Transmit(&huart4, packet, sizeof(packet), 100);
+    	HAL_UART_Transmit(&huart1, packet, sizeof(packet), 100);
 }
 
 	void sendSts3215ModeStepUsart1(uint8_t id)
@@ -125,7 +125,7 @@ namespace
 		}
 		packet[7] = static_cast<uint8_t>(~sum);
 
-		HAL_UART_Transmit(&huart4, packet, sizeof(packet), 10);
+		HAL_UART_Transmit(&huart1, packet, sizeof(packet), 10);
 	}
 } // namespace
 
@@ -142,9 +142,9 @@ extern "C" void StartDefaultTask(void *argument)
 {
 	led.start();
 	led.set_rgb(0, 255, 0);
-
-	sendSts3215ModeStepUsart1(0);
-	sendSts3215GoalPositionUsart1(0,2000);
+	STS3215_SetID_Broadcast(3);
+	sendSts3215ModeStepUsart1(3);
+	sendSts3215GoalPositionUsart1(3,20);
 
 	uint8_t id = HAL_GPIO_ReadPin(ID0_GPIO_Port, ID0_Pin) |
 				 (HAL_GPIO_ReadPin(ID1_GPIO_Port, ID1_Pin) << 1) |
