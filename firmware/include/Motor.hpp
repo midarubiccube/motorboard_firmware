@@ -4,7 +4,6 @@
 
 #include "main.h"
 #include "PID.hpp"
-#include "messageFormat/motorBoard.hpp"
 
 class Motor{
 public:
@@ -19,9 +18,9 @@ public:
     void init();
 
     void setTarget(int16_t target);
-    void setMode(ControlMode mode) {
-        this->mode = mode;
-    }
+    // void setMode(ControlMode mode) {
+    //     this->mode = mode;
+    // }
 
     void control(int test);
 
@@ -48,5 +47,5 @@ private:
     void CurrentModeControl();
 
     int16_t target = 0;
-    ControlMode mode; // 0: PWM, 1: ENCODER, 2: CURRENT
+    //ControlMode mode; // 0: PWM, 1: ENCODER, 2: CURRENT
 };

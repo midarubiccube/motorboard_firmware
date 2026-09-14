@@ -18,6 +18,7 @@ void Motor::init(){
 void Motor::setTarget(int16_t target){
      this->target = target;
 }
+
 void Motor::control(int test){
     if(mode == ControlMode::PWM_Mode){ // PWM mode
         PWMModeControl(test);

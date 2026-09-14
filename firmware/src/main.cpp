@@ -9,7 +9,7 @@
 #include "Encoder.hpp"
 #include "Motor.hpp"
 
-#include "messageFormat/motorBoard.hpp"
+#include""
 
 CANFD *canfd;
 FullColorLED led{&htim20, TIM_CHANNEL_3};
@@ -28,7 +28,7 @@ namespace
 	int last_target_position = 0;
 	int last_position = 0;
 
-	void sendSts3215GoalPositionUsart1(uint8_t id, int16_t position)
+	void sendSts3215GoalPosition1(uint8_t id, int16_t position, int16_t speed)
 	{
 		// STS3215(Protocol 1.0互換):
 		// 0xFF 0xFF ID LEN INST ADDR DATA... CHKSUM
@@ -58,8 +58,7 @@ namespace
 
 	void sendSts3215GoalSpeedUsart1(uint8_t id, int16_t speed)
 	{
-		// STS3215(Protocol 1.0互換) モード3用:
-		// 0xFF 0xFF ID LEN INST ADDR SPEED_L SPEED_H CHKSUM
+
 		uint8_t packet[9];
 		packet[0] = 0xFF;
 		packet[1] = 0xFF;
@@ -69,7 +68,6 @@ namespace
 		packet[5] = 0x2E;
 		packet[6] = speed & 0xFF;
 		packet[7] = (speed >> 8) & 0xFF;
-
 		uint8_t sum = 0;
 		for (int i = 2; i <= 7; ++i)
 		{
@@ -105,7 +103,7 @@ namespace
     	HAL_UART_Transmit(&huart1, packet, sizeof(packet), 100);
 }
 
-	void sendSts3215ModeStepUsart1(uint8_t id)
+	void sendSts3215Mode(uint8_t id, uint8_t mode)
 	{
 		// STS3215(Protocol 1.0互換) モード設定:
 		// 0xFF 0xFF ID LEN INST ADDR MODE CHKSUM
@@ -116,7 +114,7 @@ namespace
 		packet[3] = 0x04;      // パケットデータ長(INST～CHKSUM直前)
 		packet[4] = 0x03;      // コマンド（3は書き込み命令）
 		packet[5] = 33;      // レジスタアドレス(Operating Mode)
-		packet[6] = 0;      // モード値
+		packet[6] = mode;      // モード値
 
 		uint8_t sum = 0;
 		for (int i = 2; i < 7; ++i)
@@ -142,9 +140,9 @@ extern "C" void StartDefaultTask(void *argument)
 {
 	led.start();
 	led.set_rgb(0, 255, 0);
-	STS3215_SetID_Broadcast(3);
-	sendSts3215ModeStepUsart1(3);
-	sendSts3215GoalPositionUsart1(3,20);
+	//STS3215_SetID_Broadcast(3);
+	sendSts3215Mode(3, 3);
+	sendSts3215GoalPosition1(3,10000, 100);
 
 	uint8_t id = HAL_GPIO_ReadPin(ID0_GPIO_Port, ID0_Pin) |
 				 (HAL_GPIO_ReadPin(ID1_GPIO_Port, ID1_Pin) << 1) |
@@ -175,8 +173,8 @@ extern "C" void StartDefaultTask(void *argument)
 		m->start();
 	}
 
-	/*__HAL_LPTIM_START_CONTINUOUS(&hlptim1);
-	HAL_LPTIM_Encoder_Start(&hlptim1, 4095);*/
+	__HAL_LPTIM_START_CONTINUOUS(&hlptim1);
+	HAL_LPTIM_Encoder_Start(&hlptim1, 4095);
 	HAL_TIM_Encoder_Start(&htim1, TIM_CHANNEL_ALL);
 	// HAL_TIM_Encoder_Start(&htim4, TIM_CHANNEL_ALL);
 	HAL_TIM_Encoder_Start(&htim8, TIM_CHANNEL_ALL);
@@ -197,7 +195,7 @@ extern "C" void StartDefaultTask(void *argument)
 			motors[3]->setTarget(target_msg->target[3]);
 			motors[3]->setMode(ControlMode::PWM_Mode);
 		}
-		osDelay(10);
+		osDelay(5);
 	}
 }
 
@@ -207,11 +205,11 @@ extern "C" void controlCallback(void *argument)
 	{
 		if (i == 1)
 		{
-			motors[i]->control(1);
+			//motors[i]->control(1);
 		}
 		else
 		{
-			motors[i]->control(0);
+			//motors[i]->control(0);
 		}
 	}
 }
