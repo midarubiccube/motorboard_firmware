@@ -9,7 +9,10 @@
 #include "Encoder.hpp"
 #include "Motor.hpp"
 
-#include""
+#include "MotorBoard_format.h"
+#include "Servo_format.h"
+#include "ID_format.h"
+
 
 CANFD *canfd;
 FullColorLED led{&htim20, TIM_CHANNEL_3};
@@ -138,11 +141,9 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 
 extern "C" void StartDefaultTask(void *argument)
 {
-	led.start();
-	led.set_rgb(0, 255, 0);
 	//STS3215_SetID_Broadcast(3);
-	sendSts3215Mode(3, 3);
-	sendSts3215GoalPosition1(3,10000, 100);
+	//sendSts3215Mode(3, 3);
+	//sendSts3215GoalPosition1(3,10000, 100);
 
 	uint8_t id = HAL_GPIO_ReadPin(ID0_GPIO_Port, ID0_Pin) |
 				 (HAL_GPIO_ReadPin(ID1_GPIO_Port, ID1_Pin) << 1) |
@@ -150,15 +151,23 @@ extern "C" void StartDefaultTask(void *argument)
 				 (HAL_GPIO_ReadPin(ID3_GPIO_Port, ID3_Pin) << 3);
 
 	canfd = new CANFD(&hfdcan1);
-	canfd->start();
-	ID_Format filter_id;
-	filter_id.format.broadcast = true;
-	canfd->set_filter_mask(0, filter_id.id, filter_id.id);
 
-	filter_id.id = 0;
-	filter_id.format.to_BoardType = Board_Type::MotorBoard;
-	filter_id.format.to_BoardID = 1;
-	canfd->set_filter_mask(1, filter_id.id, 0xFF);
+	ID own_id;
+	own_id.fields.board_num = 5;
+	own_id.fields.data_type = DataType::MOTORBOARD_COMMAND;
+	canfd->set_filter_mask(0, own_id.id, 0xFF);
+	own_id.fields.data_type = DataType::SERVO_COMMAND;
+	canfd->set_filter_mask(0, own_id.id, 0xFF);
+	canfd->start();
+
+	led.set_rgb(255, 0, 0);
+  	led.start();
+		
+	/* Send a remote frame to request data from the other node */
+	CANFD_Frame remote;
+	remote.is_remote = true;
+	remote.id = own_id.id;
+	canfd->tx(remote);
 
 	motors[0] = new Motor(&htim2, TIM_CHANNEL_1, TIM_CHANNEL_2, SD_0_GPIO_Port, SD_0_Pin, get_encoder1);
 	motors[1] = new Motor(&htim3, TIM_CHANNEL_1, TIM_CHANNEL_2, SD_1_GPIO_Port, SD_1_Pin, get_encoder2);
@@ -173,8 +182,8 @@ extern "C" void StartDefaultTask(void *argument)
 		m->start();
 	}
 
-	__HAL_LPTIM_START_CONTINUOUS(&hlptim1);
-	HAL_LPTIM_Encoder_Start(&hlptim1, 4095);
+	//__HAL_LPTIM_START_CONTINUOUS(&hlptim1);
+	//HAL_LPTIM_Encoder_Start(&hlptim1, 4095);
 	HAL_TIM_Encoder_Start(&htim1, TIM_CHANNEL_ALL);
 	// HAL_TIM_Encoder_Start(&htim4, TIM_CHANNEL_ALL);
 	HAL_TIM_Encoder_Start(&htim8, TIM_CHANNEL_ALL);
@@ -187,13 +196,23 @@ extern "C" void StartDefaultTask(void *argument)
 		{
 			CANFD_Frame data;
 			canfd->rx(data);
-			auto target_msg = reinterpret_cast<MotorBoard_Target *>(data.data);
-			last_target_position = target_msg->target[1];
+			ID receiced_id;
+			receiced_id.id = data.id;
+			if (receiced_id.fields.data_type == DataType::MOTORBOARD_COMMAND)
+			{
+				// Handle MOTORBOARD_COMMAND	
+				auto target_msg = reinterpret_cast<MotorBoardTX_CANPacket *>(data.data);
+				motors[1]->setTarget(target_msg->target[1]);
+			    motors[1]->setTarget(target_msg->target[1]);
+			    motors[2]->setTarget(target_msg->target[2]);
+			    motors[3]->setTarget(target_msg->target[3]);
 
-			motors[2]->setTarget(target_msg->target[2]);
-			motors[2]->setMode(ControlMode::PWM_Mode);
-			motors[3]->setTarget(target_msg->target[3]);
-			motors[3]->setMode(ControlMode::PWM_Mode);
+			} else if (receiced_id.fields.data_type == DataType::SERVO_COMMAND)
+			{
+				auto servo_msg = reinterpret_cast<ServoTX_CANPacket *>(data.data);
+				sendSts3215GoalPosition1(0, servo_msg->position[0], servo_msg->speed[0]);
+			}
+
 		}
 		osDelay(5);
 	}

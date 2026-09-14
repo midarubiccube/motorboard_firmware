@@ -63,7 +63,7 @@ void CANFD::rx_interrupt_task(void){
     }
 	
 	rx_buff[head].id = RxHeader.Identifier;
-	rx_buff[head].size = RxHeader.DataLength;
+	rx_buff[head].size = dlc2len(RxHeader.DataLength);
  	memcpy(&rx_buff[head].data, fdcan1RxData, 64);
 	rx_buff[head].is_free = false;
 	rx_buff[head].is_remote = RxHeader.RxFrameType == FDCAN_REMOTE_FRAME;
@@ -83,7 +83,7 @@ bool CANFD::rx(CANFD_Frame &rx_frame){
 }
 
 void CANFD::set_filter_mask(uint8_t index, uint32_t id,uint32_t mask){
-	filter_.IdType = FDCAN_EXTENDED_ID;
+	filter_.IdType = FDCAN_STANDARD_ID;
 	filter_.FilterIndex = index;
 	filter_.FilterType = FDCAN_FILTER_MASK;
 	filter_.FilterConfig = FDCAN_FILTER_TO_RXFIFO0;

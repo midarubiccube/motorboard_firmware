@@ -18,9 +18,6 @@ public:
     void init();
 
     void setTarget(int16_t target);
-    // void setMode(ControlMode mode) {
-    //     this->mode = mode;
-    // }
 
     void control(int test);
 
