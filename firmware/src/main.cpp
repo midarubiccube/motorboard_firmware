@@ -157,7 +157,7 @@ extern "C" void StartDefaultTask(void *argument)
 	own_id.fields.data_type = DataType::MOTORBOARD_COMMAND;
 	canfd->set_filter_mask(0, own_id.id, 0xFF);
 	own_id.fields.data_type = DataType::SERVO_COMMAND;
-	canfd->set_filter_mask(0, own_id.id, 0xFF);
+	canfd->set_filter_mask(1, own_id.id, 0xFF);
 	canfd->start();
 
 	led.set_rgb(255, 0, 0);
