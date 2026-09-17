@@ -22,8 +22,8 @@
 #include "adc.h"
 #include "dma.h"
 #include "fdcan.h"
-#include "tim.h"
 #include "usart.h"
+#include "tim.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
@@ -112,6 +112,7 @@ int main(void)
   MX_TIM17_Init();
   MX_TIM20_Init();
   MX_UART4_Init();
+  MX_LPUART1_UART_Init();
   /* USER CODE BEGIN 2 */
   setbuf(stdout, NULL);
   /* USER CODE END 2 */
